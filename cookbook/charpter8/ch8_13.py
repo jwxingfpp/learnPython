@@ -1,5 +1,11 @@
 # coding: utf-8
 """
+@Time    : 2019/9/4 下午8:12
+@Author  : xingjiawei
+"""
+
+# coding: utf-8
+"""
 @Time    : 2019/9/3 下午3:25
 @Author  : xingjiawei
 python 描述器
@@ -91,11 +97,10 @@ def check_attr(**kwargs):
 
 
 # 采用以上数据类型
+@check_attr(name=SizedString(size=8),
+            shares=UnsignInteger,
+            price=UnsignFloat)
 class Stock(object):
-    name = SizedString('name', size=8),
-    shares = UnsignInteger('shares')
-    price = UnsignFloat('price')
-
     # Specify constraints
     def __init__(self, name, shares, price):
         self.name = name
