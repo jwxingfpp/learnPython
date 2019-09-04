@@ -83,24 +83,21 @@ class SizedString(String, MaxSized):
     pass
 
 
-# 上述类型约束采用类装饰器的方法
-def check_attr(**kwargs):
-    def wrapper(cls):
+# 使用元类
+class checkmeta(type):
+    def __new__(cls, *args, **kwargs):
         for key, value in kwargs.iteritems():
             if isinstance(value, Descriptor):
                 value.name = key
-                setattr(cls, key, value)
-            else:
-                setattr(cls, key, value(key))
-        return cls
-    return wrapper
+        return type.__new__(cls, *args, **kwargs)
 
 
 # 采用以上数据类型
-@check_attr(name=SizedString(size=8),
-            shares=UnsignInteger,
-            price=UnsignFloat)
 class Stock(object):
+    name = SizedString('name', size=8)
+    shares = UnsignInteger('shares')
+    price = UnsignFloat('price')
+
     # Specify constraints
     def __init__(self, name, shares, price):
         self.name = name
@@ -108,8 +105,20 @@ class Stock(object):
         self.price = price
 
 
+class Stock2(object):
+    __metaclass__ = checkmeta
+    name = SizedString(size=8)
+    shares = UnsignInteger()
+    price = UnsignFloat()
+
+    def __init__(self, name, shares, price):
+        self.name = name
+        self.shares = shares
+        self.price = price
+
+
 if __name__ == '__main__':
-    s = Stock('langsha', 1, 8.0)
+    s = Stock2('langsha', 1, 8.0)
     print s.__dict__
     print Stock.__dict__
     try:
