@@ -2,13 +2,9 @@
 """
 @Time    : 2019/9/4 下午8:12
 @Author  : xingjiawei
-"""
 
-# coding: utf-8
-"""
-@Time    : 2019/9/3 下午3:25
-@Author  : xingjiawei
-python 描述器
+采用装饰器替代之前定义的类，效果一样
+但执行速度更快
 """
 
 
@@ -28,88 +24,89 @@ class Descriptor(object):
         instance.__dict__[self.name] = value
 
 
-# Descriptor for enforcing types
-class Typed(Descriptor):
-    expected_type = type(None)
+# 使用装饰器代理混入类
+# Decorator for applying type checking
+def Typed(expected_type, cls=None):
+    if cls is None:
+        return lambda cls: Typed(expected_type, cls)
+
+    cls_set = cls.__set__
 
     def __set__(self, instance, value):
-        if not isinstance(value, self.expected_type):
-            raise TypeError('expect {}'.format(self.expected_type))
-        super(Typed, self).__set__(instance, value)
+        if not isinstance(value, expected_type):
+            raise TypeError('expect {}'.format(expected_type))
+        cls_set(self, instance, value)
+    cls.__set__ = __set__
+    return cls
 
 
-# Descriptor for enforcing values
-class Unsigned(Descriptor):
+# Decorator for unsigned values
+def Unsigned(cls):
+    cls_set = cls.__set__
+
     def __set__(self, instance, value):
         if value < 0:
-            raise ValueError('need to be > 0')
-        super(Unsigned, self).__set__(instance, value)
+            raise ValueError('must be > 0')
+        cls_set(self, instance, value)
+    cls.__set__ = __set__
+    return cls
 
 
-class MaxSized(Descriptor):
+# decrator for allowing sized values
+def MaxSized(cls):
+    cls_init = cls.__init__
+
     def __init__(self, name=None, **opts):
         if 'size' not in opts:
             raise TypeError('missing size')
-        super(MaxSized, self).__init__(name, **opts)
+        cls_init(self, name, **opts)
+
+    cls.__init__ = __init__
+    cls_set = cls.__set__
 
     def __set__(self, instance, value):
         if len(value) > self.size:
-            raise ValueError('value size must be < {}'.format(self.size))
-        super(MaxSized, self).__set__(instance, value)
+            raise ValueError('must be < {}'.format(self.size))
+        cls_set(self, instance, value)
+    cls.__set__ = __set__
+    return cls
 
 
-# 具体数据类型
-class Integer(Typed):
-    expected_type = int
-
-
-class UnsignInteger(Integer, Unsigned):
+# Specialized descriptors
+@Typed(int)
+class Integer(Descriptor):
     pass
 
 
-class Float(Typed):
-    expected_type = float
-
-
-class UnsignFloat(Float, Unsigned):
+@Unsigned
+class UnsignedInt(Integer):
     pass
 
 
-class String(Typed):
-    expected_type = str
-
-
-class SizedString(String, MaxSized):
+@Typed(float)
+class Float(Descriptor):
     pass
 
 
-# 使用元类
-class checkmeta(type):
-    def __new__(cls, *args, **kwargs):
-        for key, value in kwargs.iteritems():
-            if isinstance(value, Descriptor):
-                value.name = key
-        return type.__new__(cls, *args, **kwargs)
+@Unsigned
+class UnsignedFloat(Float):
+    pass
 
 
-# 采用以上数据类型
+@Typed(str)
+class String(Descriptor):
+    pass
+
+
+@MaxSized
+class SizedString(String):
+    pass
+
+
 class Stock(object):
     name = SizedString('name', size=8)
-    shares = UnsignInteger('shares')
-    price = UnsignFloat('price')
-
-    # Specify constraints
-    def __init__(self, name, shares, price):
-        self.name = name
-        self.shares = shares
-        self.price = price
-
-
-class Stock2(object):
-    __metaclass__ = checkmeta
-    name = SizedString(size=8)
-    shares = UnsignInteger()
-    price = UnsignFloat()
+    shares = UnsignedInt('shares')
+    price = UnsignedFloat('price')
 
     def __init__(self, name, shares, price):
         self.name = name
@@ -118,20 +115,24 @@ class Stock2(object):
 
 
 if __name__ == '__main__':
-    s = Stock2('langsha', 1, 8.0)
+    s = Stock('langsha', 1, 8.0)
     print s.__dict__
     print Stock.__dict__
-    try:
-        s.name = 's'*10
-    except ValueError as e:
-        print e
+    print s.name
+    print s.shares
+    print s.price
 
     try:
-        s.price = 5
-    except TypeError as e:
+        s.name = 'h'*10
+    except ValueError as e:
         print e
 
     try:
         s.shares = -1
     except ValueError as e:
+        print e
+
+    try:
+        s.price = 1
+    except TypeError as e:
         print e
