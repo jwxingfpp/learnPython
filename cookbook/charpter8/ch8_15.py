@@ -4,30 +4,45 @@
 @Author  : xingjiawei
 
 属性的代理访问
-代理是一种编程模式, 目的可能是作为继承的一个替代方法或者实现代理模式
+实现代理模式
 """
-class A:
-    def spam(self, x):
-        print 'A spam running'
-        print x
-
-    def foo(self):
-        print 'A foo running'
 
 
-class B:
-    def __init__(self):
-        self._a = A()
+class Proxy(object):
+    def __init__(self, obj):
+        self._obj = obj
 
-    # Expose all of the methos defined on class A
     def __getattr__(self, item):
-        """
-        这个方法在访问的attribute不存在的时候被调用
-        """
-        return getattr(self._a, item)
+        return getattr(self._obj, item)
+
+    def __setattr__(self, key, value):
+        if key.startswith('_'):
+            super(Proxy, self).__setattr__(key, value)
+        else:
+            print 'setattr', key, value
+            setattr(self._obj, key, value)
+
+    def __delattr__(self, item):
+        if item.startswith('_'):
+            super(Proxy, self).__delattr__(item)
+        else:
+            print 'delattr', item
+            delattr(self._obj, item)
+
+
+# 使用这个代理类时， 只需用它来包装下其他类
+class Spam(object):
+    def __init__(self, x):
+        self.x = x
+
+    def bar(self, y):
+        print 'Spam.bar:', self.x, y
 
 
 if __name__ == '__main__':
-    b = B()
-    b.spam(1)
-    b.foo()
+    s = Spam(2)
+    p = Proxy(s)
+    print p.x
+    p.bar(5)
+    p.y = 7
+    print p.y
