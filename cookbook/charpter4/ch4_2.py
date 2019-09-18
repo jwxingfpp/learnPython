@@ -5,6 +5,12 @@
 实现迭代器协议
 Eg: 实现一个深度优先方式遍历树
 """
+from itertools import islice, permutations, combinations
+
+"""
+迭代协议要求一个__iter__()方法返回一个特殊的迭代器对象，该迭代器对象实现了__next__()方法
+并通过StopIteration异常表示迭代的完成
+"""
 
 
 class Node(object):
@@ -36,6 +42,22 @@ def frange(start, end, increment):
         x = x + increment
 
 
+def count(n):
+    while True:
+        yield n
+        n += 1
+
+
+# 展开嵌套序列
+def flat(items):
+    for x in items:
+        if isinstance(x, list):
+            for x1 in flat(x):
+                yield x1
+        else:
+            yield x
+
+
 if __name__ == '__main__':
     root = Node(0)
     c1 = Node(1)
@@ -55,3 +77,33 @@ if __name__ == '__main__':
     for node in root.depth_first():
         print node
 
+    c = count(0)
+    for x in islice(c, 10, 21):
+        print x
+
+    a = ['a', 'b', 'c']
+    # 所有排列
+    for x in permutations(a):
+        print x
+
+    # 不同元素的排列
+    for x in permutations(a, 2):
+        print x
+
+    # 不同元素组合
+    for x in combinations(a, 2):
+        print x
+
+    # 序号及内容
+    for index, value in enumerate(a):
+        print index, value
+
+    # 合并连个列表
+    b = range(1, 4)
+    print type(zip(b, a)), zip(b, a)
+    for index, value in zip(b, a):
+        print index, value
+
+    items = [1, 2, [3, 4, [5, 6], 7], 8]
+    for i in flat(items):
+        print i
