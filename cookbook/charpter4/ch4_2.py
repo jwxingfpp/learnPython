@@ -2,8 +2,8 @@
 """
 @Time    : 2019/9/18 下午5:38
 @Author  : xingjiawei
-代理迭代
-Q: 构建自定义容器对象，需要在该容器对象上执行迭代操作
+实现迭代器协议
+Eg: 实现一个深度优先方式遍历树
 """
 
 
@@ -21,6 +21,12 @@ class Node(object):
     def __iter__(self):
         return iter(self._children)
 
+    def depth_first(self):
+        yield self
+        for node in self._children:
+            for n in node.depth_first():
+                yield n
+
 
 # 生成器迭代
 def frange(start, end, increment):
@@ -34,12 +40,18 @@ if __name__ == '__main__':
     root = Node(0)
     c1 = Node(1)
     c2 = Node(2)
+    c3 = Node(3)
+    c4 = Node(4)
     root.add_children(c1)
     root.add_children(c2)
-
+    c1.add_children(c3)
+    c3.add_children(c4)
     for ch in root:
         print ch
 
     for i in frange(1, 10, 2):
         print i
+
+    for node in root.depth_first():
+        print node
 
